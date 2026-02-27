@@ -51,3 +51,8 @@ class SessionHistory(BaseModel):
     status: str
     completion_ratio: Optional[float] = None
     focus_score: Optional[float] = None
+    start_time: Optional[datetime] = None   # ✅ ADD THIS
+    end_time: Optional[datetime] = None     # ✅ Optional but good
+
+    class Config:
+        from_attributes = True
