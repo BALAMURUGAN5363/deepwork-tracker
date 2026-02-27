@@ -8,6 +8,7 @@ function App() {
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
   const [duration, setDuration] = useState("");
+
   const [history, setHistory] = useState([]);
   const [weekly, setWeekly] = useState([]);
 
@@ -15,24 +16,18 @@ function App() {
   const [pauseReason, setPauseReason] = useState("");
   const [selectedSession, setSelectedSession] = useState(null);
 
-  /* ================= FETCH FUNCTIONS ================= */
+  const [timers, setTimers] = useState({});
+
+  /* ================= FETCH ================= */
 
   const fetchHistory = async () => {
-    try {
-      const res = await axios.get(`${API}/sessions/history`);
-      setHistory(res.data);
-    } catch (err) {
-      console.error("History fetch failed", err);
-    }
+    const res = await axios.get(`${API}/sessions/history`);
+    setHistory(res.data);
   };
 
   const fetchWeekly = async () => {
-    try {
-      const res = await axios.get(`${API}/sessions/weekly-report`);
-      setWeekly(res.data);
-    } catch (err) {
-      console.error("Weekly report fetch failed", err);
-    }
+    const res = await axios.get(`${API}/sessions/weekly-report`);
+    setWeekly(res.data);
   };
 
   useEffect(() => {
@@ -40,30 +35,59 @@ function App() {
     fetchWeekly();
   }, []);
 
-  /* ================= CREATE ================= */
+  /* ================= REAL TIMER (FIXED UTC ISSUE) ================= */
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimers((prev) => {
+        const updated = { ...prev };
+
+        history.forEach((session) => {
+          if (session.status === "active" && session.start_time) {
+
+            // ✅ Force UTC interpretation
+            const start = new Date(session.start_time + "Z");
+            const now = new Date();
+
+            const diff = Math.floor(
+              (now.getTime() - start.getTime()) / 1000
+            );
+
+            if (diff >= 0) {
+              const minutes = Math.floor(diff / 60);
+              const seconds = diff % 60;
+
+              updated[session.id] =
+                `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+            }
+          }
+        });
+
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [history]);
+
+  /* ================= ACTIONS ================= */
 
   const createSession = async () => {
     if (!title || !duration) return;
 
-    try {
-      await axios.post(`${API}/sessions/`, {
-        title,
-        goal,
-        scheduled_duration: parseInt(duration),
-      });
+    await axios.post(`${API}/sessions/`, {
+      title,
+      goal,
+      scheduled_duration: parseInt(duration),
+    });
 
-      setTitle("");
-      setGoal("");
-      setDuration("");
+    setTitle("");
+    setGoal("");
+    setDuration("");
 
-      fetchHistory();
-      fetchWeekly();
-    } catch (err) {
-      console.error("Create failed", err);
-    }
+    fetchHistory();
+    fetchWeekly();
   };
-
-  /* ================= ACTIONS ================= */
 
   const startSession = async (id) => {
     await axios.patch(`${API}/sessions/${id}/start`);
@@ -81,11 +105,8 @@ function App() {
     fetchWeekly();
   };
 
-  /* ================= PAUSE MODAL ================= */
-
   const openPauseModal = (id) => {
     setSelectedSession(id);
-    setPauseReason("");
     setShowModal(true);
   };
 
@@ -96,16 +117,9 @@ function App() {
       reason: pauseReason,
     });
 
-    setShowModal(false);
     setPauseReason("");
-    setSelectedSession(null);
+    setShowModal(false);
     fetchHistory();
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setPauseReason("");
-    setSelectedSession(null);
   };
 
   const downloadCSV = () => {
@@ -118,7 +132,7 @@ function App() {
     <div className="container">
       <h1>Deep Work Tracker</h1>
 
-      {/* ================= CREATE SECTION ================= */}
+      {/* CREATE SESSION */}
       <div className="section">
         <h2>Create Session</h2>
 
@@ -144,25 +158,32 @@ function App() {
         <button onClick={createSession}>Create Session</button>
       </div>
 
-      {/* ================= SESSIONS ================= */}
+      {/* SESSION LIST */}
       <div className="section">
         <h2>Sessions</h2>
 
         {history.map((item) => (
           <div className="history-item" key={item.id}>
-            {/* HEADER FIXED ALIGNMENT */}
-            <div className="item-header">
+            <div className="top-row">
               <strong>{item.title}</strong>
+
+              {/* Badge aligned to right */}
               <span className={`badge ${item.status}`}>
                 {item.status}
               </span>
             </div>
 
-            <div className="focus-text">
+            {item.status === "active" && (
+              <div className="timer">
+                ⏱ {timers[item.id] || "0m 00s"}
+              </div>
+            )}
+
+            <div className="focus">
               Focus: <b>{item.focus_score}%</b>
             </div>
 
-            <div className="action-buttons">
+            <div className="actions">
               {item.status === "scheduled" && (
                 <button onClick={() => startSession(item.id)}>
                   Start
@@ -177,7 +198,6 @@ function App() {
                   >
                     Pause
                   </button>
-
                   <button
                     className="complete-btn"
                     onClick={() => completeSession(item.id)}
@@ -195,7 +215,6 @@ function App() {
                   >
                     Resume
                   </button>
-
                   <button
                     className="complete-btn"
                     onClick={() => completeSession(item.id)}
@@ -209,7 +228,7 @@ function App() {
         ))}
       </div>
 
-      {/* ================= WEEKLY REPORT ================= */}
+      {/* WEEKLY REPORT */}
       <div className="section">
         <h2>Weekly Report</h2>
 
@@ -221,12 +240,11 @@ function App() {
         ))}
       </div>
 
-      {/* ================= EXPORT ================= */}
-      <div className="section">
+      <div className="section center">
         <button onClick={downloadCSV}>Download CSV</button>
       </div>
 
-      {/* ================= MODAL ================= */}
+      {/* PAUSE MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">
@@ -240,7 +258,10 @@ function App() {
 
             <div className="modal-buttons">
               <button onClick={confirmPause}>Confirm</button>
-              <button className="cancel-btn" onClick={closeModal}>
+              <button
+                className="cancel-btn"
+                onClick={() => setShowModal(false)}
+              >
                 Cancel
               </button>
             </div>
