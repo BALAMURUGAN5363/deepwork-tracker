@@ -1,15 +1,11 @@
 from datetime import datetime
 from fastapi import HTTPException
 from app.models import Session, Interruption
-from collections import defaultdict
-import csv
 from fastapi.responses import FileResponse
-
-# 🔹 Get Session History
-
+import csv
 
 
-# 🔹 Create Session
+# 🔹 CREATE SESSION
 def create_session(db, session_data):
     new_session = Session(
         title=session_data.title,
@@ -25,7 +21,7 @@ def create_session(db, session_data):
     return new_session
 
 
-# 🔹 Start Session
+# 🔹 START SESSION
 def start_session(db, session_id: int):
     session = db.query(Session).filter(Session.id == session_id).first()
 
@@ -44,15 +40,14 @@ def start_session(db, session_id: int):
     return session
 
 
-# 🔹 Pause Session
+# 🔹 PAUSE SESSION
 def pause_session(db, session_id: int, reason: str):
     session = db.query(Session).filter(Session.id == session_id).first()
 
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # 🔥 Prevent pausing interrupted or completed sessions
-    if session.status not in ["active"]:
+    if session.status != "active":
         raise HTTPException(status_code=400, detail="Session is not active")
 
     interruption = Interruption(
@@ -78,7 +73,7 @@ def pause_session(db, session_id: int, reason: str):
     return session
 
 
-# 🔹 Resume Session
+# 🔹 RESUME SESSION
 def resume_session(db, session_id: int):
     session = db.query(Session).filter(Session.id == session_id).first()
 
@@ -96,7 +91,7 @@ def resume_session(db, session_id: int):
     return session
 
 
-# 🔹 Complete Session
+# 🔹 COMPLETE SESSION
 def complete_session(db, session_id: int):
     session = db.query(Session).filter(Session.id == session_id).first()
 
@@ -115,7 +110,6 @@ def complete_session(db, session_id: int):
         session.end_time - session.start_time
     ).total_seconds() / 60
 
-    # 🔥 Round here too (optional but cleaner)
     actual_minutes = round(actual_minutes, 2)
 
     if actual_minutes > session.scheduled_duration * 1.1:
@@ -127,6 +121,9 @@ def complete_session(db, session_id: int):
     db.refresh(session)
 
     return session
+
+
+# 🔹 SESSION HISTORY (🔥 FIXED TIMER ISSUE HERE)
 def get_session_history(db):
     sessions = db.query(Session).all()
     history = []
@@ -164,18 +161,16 @@ def get_session_history(db):
             "scheduled_duration": session.scheduled_duration,
             "actual_duration": actual_duration,
             "pause_count": pause_count,
-            "status": session.status,   # 👈 USE ORIGINAL STATUS
+            "status": session.status,
             "completion_ratio": completion_ratio,
-            "focus_score": focus_score
+            "focus_score": focus_score,
+            "start_time": session.start_time.isoformat() if session.start_time else None
         })
 
     return history
 
-from collections import defaultdict
 
-from sqlalchemy import extract, func
-from datetime import datetime
-
+# 🔹 WEEKLY REPORT
 def get_weekly_report(db):
     current_year = datetime.utcnow().year
     current_week = datetime.utcnow().isocalendar()[1]
@@ -193,7 +188,6 @@ def get_weekly_report(db):
             if year == current_year and week == current_week:
                 total_sessions += 1
 
-                # 🔥 Count ONLY real completed (NOT overdue)
                 if session.status == "completed":
                     completed_sessions += 1
 
@@ -203,6 +197,8 @@ def get_weekly_report(db):
         "completed_sessions": completed_sessions
     }]
 
+
+# 🔹 EXPORT CSV
 def export_sessions_csv(db):
     sessions = db.query(Session).all()
     file_path = "sessions_export.csv"
