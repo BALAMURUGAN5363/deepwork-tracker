@@ -45,6 +45,7 @@ class InterruptionResponse(BaseModel):
 class SessionHistory(BaseModel):
     id: int
     title: str
+    goal: Optional[str] = None
     scheduled_duration: int
     actual_duration: Optional[float] = None
     pause_count: int
