@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
 
@@ -9,6 +9,10 @@ function App() {
   const [goal, setGoal] = useState("");
   const [duration, setDuration] = useState("");
 
+  const titleRef = useRef(null);
+  const goalRef = useRef(null);
+  const durationRef = useRef(null);
+
   const [history, setHistory] = useState([]);
   const [weekly, setWeekly] = useState([]);
 
@@ -17,6 +21,8 @@ function App() {
   const [selectedSession, setSelectedSession] = useState(null);
 
   const [timers, setTimers] = useState({});
+  const [highlightedId, setHighlightedId] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   /* ================= FETCH ================= */
 
@@ -44,21 +50,21 @@ function App() {
 
         history.forEach((session) => {
           if (session.status === "active" && session.start_time) {
-
-            // ✅ Force UTC interpretation
-            const start = new Date(session.start_time + "Z");
+            // The backend returns start_time in IST now (due to to_ist conversion in history endpoint)
+            // We need to parse it correctly. ISO strings like "2026-02-28T05:12:10"
+            const start = new Date(session.start_time);
             const now = new Date();
 
-            const diff = Math.floor(
-              (now.getTime() - start.getTime()) / 1000
-            );
+            const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
 
             if (diff >= 0) {
               const minutes = Math.floor(diff / 60);
               const seconds = diff % 60;
 
-              updated[session.id] =
-                `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+              updated[session.id] = `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+            } else {
+              // If start time is in future relative to client (sync issue), show 0m 00s
+              updated[session.id] = "0m 00s";
             }
           }
         });
@@ -73,9 +79,9 @@ function App() {
   /* ================= ACTIONS ================= */
 
   const createSession = async () => {
-    if (!title || !duration) return;
+    if (!title || !goal || !duration) return;
 
-    await axios.post(`${API}/sessions/`, {
+    const res = await axios.post(`${API}/sessions/`, {
       title,
       goal,
       scheduled_duration: parseInt(duration),
@@ -85,9 +91,25 @@ function App() {
     setGoal("");
     setDuration("");
 
-    fetchHistory();
+    await fetchHistory();
     fetchWeekly();
+
+    const newSessionId = res.data.id;
+    setHighlightedId(newSessionId);
+    
+    // Clear highlight after 4 seconds
+    setTimeout(() => setHighlightedId(null), 4000);
   };
+
+  // Auto-scroll to newly created session
+  useEffect(() => {
+    if (highlightedId) {
+      const element = document.getElementById(`session-${highlightedId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [highlightedId, history]);
 
   const startSession = async (id) => {
     await axios.patch(`${API}/sessions/${id}/start`);
@@ -126,6 +148,18 @@ function App() {
     window.open(`${API}/sessions/export`);
   };
 
+  const handleEnterKey = (e, nextRef) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (nextRef && nextRef.current) {
+        nextRef.current.focus();
+      } else if (!nextRef) {
+        // If it's the last input, trigger createSession
+        createSession();
+      }
+    }
+  };
+
   /* ================= UI ================= */
 
   return (
@@ -137,33 +171,49 @@ function App() {
         <h2>Create Session</h2>
 
         <input
-          placeholder="Title"
+          autoFocus
+          ref={titleRef}
+          placeholder="Title *"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => handleEnterKey(e, goalRef)}
         />
 
         <input
-          placeholder="Goal"
+          ref={goalRef}
+          placeholder="Goal *"
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
+          onKeyDown={(e) => handleEnterKey(e, durationRef)}
         />
 
         <input
+          ref={durationRef}
           type="number"
-          placeholder="Duration (minutes)"
+          placeholder="Duration (minutes) *"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
+          onKeyDown={(e) => handleEnterKey(e, null)}
         />
 
-        <button onClick={createSession}>Create Session</button>
+        <button 
+          onClick={createSession} 
+          disabled={!title || !goal || !duration}
+        >
+          Create Session
+        </button>
       </div>
 
       {/* SESSION LIST */}
       <div className="section">
-        <h2>Sessions</h2>
+        <h2>Current Sessions</h2>
 
-        {history.map((item) => (
-          <div className="history-item" key={item.id}>
+        {history.filter(item => ["scheduled", "active", "paused"].includes(item.status)).map((item) => (
+          <div 
+            className={`history-item ${highlightedId === item.id ? "new-highlight" : ""}`} 
+            key={item.id}
+            id={`session-${item.id}`}
+          >
             <div className="top-row">
               <strong>{item.title}</strong>
 
@@ -226,7 +276,44 @@ function App() {
             </div>
           </div>
         ))}
+
+        {history.filter(item => ["scheduled", "active", "paused"].includes(item.status)).length === 0 && (
+          <p className="empty-msg">No active sessions.</p>
+        )}
       </div>
+
+      {/* HISTORY TOGGLE */}
+      <div className="section center no-bg">
+        <button 
+          className="history-toggle-btn"
+          onClick={() => setShowHistory(!showHistory)}
+        >
+          {showHistory ? "Hide History" : "Show History"}
+        </button>
+      </div>
+
+      {/* SESSION HISTORY */}
+      {showHistory && (
+        <div className="section history-section">
+          <h2>Session History</h2>
+          {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).map((item) => (
+            <div className="history-item" key={item.id}>
+              <div className="top-row">
+                <strong>{item.title}</strong>
+                <span className={`badge ${item.status}`}>
+                  {item.status}
+                </span>
+              </div>
+              <div className="focus">
+                Focus: <b>{item.focus_score}%</b>
+              </div>
+            </div>
+          ))}
+          {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).length === 0 && (
+            <p className="empty-msg">No history records yet.</p>
+          )}
+        </div>
+      )}
 
       {/* WEEKLY REPORT */}
       <div className="section">
@@ -234,8 +321,27 @@ function App() {
 
         {weekly.map((w, i) => (
           <div className="week-item" key={i}>
-            Week: <b>{w.week}</b> | Total: {w.total_sessions} |
-            Completed: {w.completed_sessions}
+            <div className="week-header">
+              Week: <b>{w.week}</b>
+            </div>
+            <div className="week-stats">
+              <div className="stat">
+                <span className="stat-label">Total</span>
+                <span className="stat-value">{w.total_sessions}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Completed</span>
+                <span className="stat-value completed">{w.completed_sessions}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Overdue</span>
+                <span className="stat-value overdue">{w.overdue_sessions}</span>
+              </div>
+              <div className="stat">
+                <span className="stat-label">Interrupted</span>
+                <span className="stat-value interrupted">{w.interrupted_sessions}</span>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -251,13 +357,24 @@ function App() {
             <h3>Pause Session</h3>
 
             <input
+              autoFocus
               placeholder="Enter pause reason..."
               value={pauseReason}
               onChange={(e) => setPauseReason(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && pauseReason) {
+                  confirmPause();
+                }
+              }}
             />
 
             <div className="modal-buttons">
-              <button onClick={confirmPause}>Confirm</button>
+              <button 
+                onClick={confirmPause} 
+                disabled={!pauseReason}
+              >
+                Confirm
+              </button>
               <button
                 className="cancel-btn"
                 onClick={() => setShowModal(false)}
