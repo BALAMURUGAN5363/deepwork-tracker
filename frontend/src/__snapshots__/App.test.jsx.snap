@@ -1,0 +1,385 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActiveSession Component matches snapshot when active 1`] = `
+<DocumentFragment>
+  <div
+    class="history-item "
+    id="session-1"
+  >
+    <div
+      class="top-row"
+    >
+      <strong>
+        Test Session
+      </strong>
+      <span
+        class="badge active"
+      >
+        active
+      </span>
+    </div>
+    <div
+      class="timer"
+    >
+      ⏱ 10m 00s
+    </div>
+    <div
+      class="focus"
+    >
+      Focus: 
+      <b>
+        100%
+      </b>
+    </div>
+    <div
+      class="actions"
+    >
+      <button
+        class="pause-btn"
+      >
+        Pause
+      </button>
+      <button
+        class="complete-btn"
+      >
+        Complete
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ActiveSession Component matches snapshot when paused 1`] = `
+<DocumentFragment>
+  <div
+    class="history-item "
+    id="session-1"
+  >
+    <div
+      class="top-row"
+    >
+      <strong>
+        Test Session
+      </strong>
+      <span
+        class="badge paused"
+      >
+        paused
+      </span>
+    </div>
+    <div
+      class="focus"
+    >
+      Focus: 
+      <b>
+        100%
+      </b>
+    </div>
+    <div
+      class="actions"
+    >
+      <button
+        class="resume-btn"
+      >
+        Resume
+      </button>
+      <button
+        class="complete-btn"
+      >
+        Complete
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`ActiveSession Component matches snapshot when scheduled 1`] = `
+<DocumentFragment>
+  <div
+    class="history-item "
+    id="session-1"
+  >
+    <div
+      class="top-row"
+    >
+      <strong>
+        Test Session
+      </strong>
+      <span
+        class="badge scheduled"
+      >
+        scheduled
+      </span>
+    </div>
+    <div
+      class="focus"
+    >
+      Focus: 
+      <b>
+        100%
+      </b>
+    </div>
+    <div
+      class="actions"
+    >
+      <button>
+        Start
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`App Component matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="container"
+  >
+    <h1>
+      Deep Work Tracker
+    </h1>
+    <div
+      class="section"
+    >
+      <h2>
+        Create Session
+      </h2>
+      <input
+        placeholder="Title *"
+        value=""
+      />
+      <input
+        placeholder="Goal *"
+        value=""
+      />
+      <input
+        placeholder="Duration (minutes) *"
+        type="number"
+        value=""
+      />
+      <button
+        disabled=""
+      >
+        Create Session
+      </button>
+    </div>
+    <div
+      class="section"
+    >
+      <h2>
+        Current Sessions
+      </h2>
+      <div
+        class="history-item "
+        id="session-1"
+      >
+        <div
+          class="top-row"
+        >
+          <strong>
+            Session 1
+          </strong>
+          <span
+            class="badge scheduled"
+          >
+            scheduled
+          </span>
+        </div>
+        <div
+          class="focus"
+        >
+          Focus: 
+          <b>
+            100%
+          </b>
+        </div>
+        <div
+          class="actions"
+        >
+          <button>
+            Start
+          </button>
+        </div>
+      </div>
+      <div
+        class="history-item "
+        id="session-2"
+      >
+        <div
+          class="top-row"
+        >
+          <strong>
+            Session 2
+          </strong>
+          <span
+            class="badge active"
+          >
+            active
+          </span>
+        </div>
+        <div
+          class="timer"
+        >
+          ⏱ 0m 00s
+        </div>
+        <div
+          class="focus"
+        >
+          Focus: 
+          <b>
+            95%
+          </b>
+        </div>
+        <div
+          class="actions"
+        >
+          <button
+            class="pause-btn"
+          >
+            Pause
+          </button>
+          <button
+            class="complete-btn"
+          >
+            Complete
+          </button>
+        </div>
+      </div>
+      <div
+        class="history-item "
+        id="session-3"
+      >
+        <div
+          class="top-row"
+        >
+          <strong>
+            Session 3
+          </strong>
+          <span
+            class="badge paused"
+          >
+            paused
+          </span>
+        </div>
+        <div
+          class="focus"
+        >
+          Focus: 
+          <b>
+            90%
+          </b>
+        </div>
+        <div
+          class="actions"
+        >
+          <button
+            class="resume-btn"
+          >
+            Resume
+          </button>
+          <button
+            class="complete-btn"
+          >
+            Complete
+          </button>
+        </div>
+      </div>
+    </div>
+    <div
+      class="section center no-bg"
+    >
+      <button
+        class="history-toggle-btn"
+      >
+        Show History
+      </button>
+    </div>
+    <div
+      class="section"
+    >
+      <h2>
+        Weekly Report
+      </h2>
+      <div
+        class="week-item"
+      >
+        <div
+          class="week-header"
+        >
+          Week: 
+          <b>
+            2026-W09
+          </b>
+        </div>
+        <div
+          class="week-stats"
+        >
+          <div
+            class="stat"
+          >
+            <span
+              class="stat-label"
+            >
+              Total
+            </span>
+            <span
+              class="stat-value"
+            >
+              4
+            </span>
+          </div>
+          <div
+            class="stat"
+          >
+            <span
+              class="stat-label"
+            >
+              Completed
+            </span>
+            <span
+              class="stat-value completed"
+            >
+              1
+            </span>
+          </div>
+          <div
+            class="stat"
+          >
+            <span
+              class="stat-label"
+            >
+              Overdue
+            </span>
+            <span
+              class="stat-value overdue"
+            >
+              0
+            </span>
+          </div>
+          <div
+            class="stat"
+          >
+            <span
+              class="stat-label"
+            >
+              Interrupted
+            </span>
+            <span
+              class="stat-value interrupted"
+            >
+              0
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="section center"
+    >
+      <button>
+        Download CSV
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
+`;

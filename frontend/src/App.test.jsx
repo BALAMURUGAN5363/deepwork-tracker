@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import App from './App';
+import ActiveSession from './components/ActiveSession';
 import axios from 'axios';
 
 // Mock axios
@@ -42,6 +43,12 @@ describe('App Component', () => {
     jest.runOnlyPendingTimers();
     jest.useRealTimers();
     jest.clearAllMocks();
+  });
+
+  test('matches snapshot', async () => {
+    const { asFragment } = render(<App />);
+    await waitFor(() => expect(screen.getByText('Session 1')).toBeInTheDocument());
+    expect(asFragment()).toMatchSnapshot();
   });
 
   test('renders App and fetches initial data', async () => {
@@ -205,5 +212,91 @@ describe('App Component', () => {
     
     render(<App />);
     await waitFor(() => expect(screen.getByText('No active sessions.')).toBeInTheDocument());
+  });
+});
+
+describe('ActiveSession Component', () => {
+  const mockItem = {
+    id: 1,
+    title: 'Test Session',
+    status: 'active',
+    focus_score: 100,
+  };
+
+  const mockProps = {
+    item: mockItem,
+    highlightedId: null,
+    timerValue: '10m 00s',
+    onStart: jest.fn(),
+    onPause: jest.fn(),
+    onResume: jest.fn(),
+    onComplete: jest.fn(),
+  };
+
+  test('matches snapshot when active', () => {
+    const { asFragment } = render(<ActiveSession {...mockProps} />);
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  test('matches snapshot when scheduled', () => {
+    const scheduledProps = {
+      ...mockProps,
+      item: { ...mockItem, status: 'scheduled' },
+      timerValue: null,
+    };
+    const { asFragment } = render(<ActiveSession {...scheduledProps} />);
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  test('matches snapshot when paused', () => {
+    const pausedProps = {
+      ...mockProps,
+      item: { ...mockItem, status: 'paused' },
+      timerValue: null,
+    };
+    const { asFragment } = render(<ActiveSession {...pausedProps} />);
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  test('calls onStart when Start button is clicked', () => {
+    const scheduledProps = {
+      ...mockProps,
+      item: { ...mockItem, status: 'scheduled' },
+    };
+    render(<ActiveSession {...scheduledProps} />);
+    fireEvent.click(screen.getByText('Start'));
+    expect(mockProps.onStart).toHaveBeenCalledWith(1);
+  });
+
+  test('calls onPause when Pause button is clicked', () => {
+    render(<ActiveSession {...mockProps} />);
+    fireEvent.click(screen.getByText('Pause'));
+    expect(mockProps.onPause).toHaveBeenCalledWith(1);
+  });
+
+  test('calls onComplete when Complete button is clicked (active)', () => {
+    render(<ActiveSession {...mockProps} />);
+    fireEvent.click(screen.getByText('Complete'));
+    expect(mockProps.onComplete).toHaveBeenCalledWith(1);
+  });
+
+  test('calls onResume when Resume button is clicked', () => {
+    const pausedProps = {
+      ...mockProps,
+      item: { ...mockItem, status: 'paused' },
+    };
+    render(<ActiveSession {...pausedProps} />);
+    fireEvent.click(screen.getByText('Resume'));
+    expect(mockProps.onResume).toHaveBeenCalledWith(1);
+  });
+
+  test('calls onComplete when Complete button is clicked (paused)', () => {
+    const pausedProps = {
+      ...mockProps,
+      item: { ...mockItem, status: 'paused' },
+    };
+    render(<ActiveSession {...pausedProps} />);
+    fireEvent.click(screen.getByText('Complete'));
+    expect(mockProps.onComplete).toHaveBeenCalledWith(1);
   });
 });

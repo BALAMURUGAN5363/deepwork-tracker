@@ -122,13 +122,17 @@ deepwork-tracker/
 
 ## 🔧 Automated Setup (Recommended)
 
-1. **Backend**: Run `setup_backend.bat` from the root directory. This will create the virtual environment, install dependencies, run migrations, and execute tests.
-2. **Frontend**: Run `setup_frontend.bat` from the `frontend` directory. This will install NPM packages and run Jest tests.
+1. **Full Project**: Run `setup.bat` from the root directory. This will set up both backend and frontend, run migrations, and execute all tests.
+2. **Individual Setup**:
+   - **Backend**: Run `setup_backend.bat`.
+   - **Frontend**: Run `setup_frontend.bat` from the `frontend` directory.
 
 ## 🚀 Running the Application
 
-1. **Backend**: Run `run_backend.bat`. It will run unit tests first and start the server at `http://127.0.0.1:8000` if they pass.
-2. **Frontend**: Run `run_frontend.bat` from the `frontend` directory. It will run Jest tests first and start the dev server at `http://localhost:5173` if they pass.
+1. **Both (Recommended)**: Run `run_all.bat` from the root directory. This will launch both servers in separate windows.
+2. **Individual Servers**:
+   - **Backend**: Run `run_backend.bat`.
+   - **Frontend**: Run `run_frontend.bat` from the `frontend` directory.
 
 ---
 
