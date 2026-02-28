@@ -1,9 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import HTTPException
 from app.models import Session, Interruption
 from fastapi.responses import FileResponse
 import csv
 
+# 🔹 CONVERT UTC TO IST
+def to_ist(utc_dt):
+    if not utc_dt:
+        return None
+    return utc_dt + timedelta(hours=5, minutes=30)
 
 # 🔹 CREATE SESSION
 def create_session(db, session_data):
@@ -158,13 +163,15 @@ def get_session_history(db):
         history.append({
             "id": session.id,
             "title": session.title,
+            "goal": session.goal,
             "scheduled_duration": session.scheduled_duration,
             "actual_duration": actual_duration,
             "pause_count": pause_count,
             "status": session.status,
             "completion_ratio": completion_ratio,
             "focus_score": focus_score,
-            "start_time": session.start_time.isoformat() if session.start_time else None
+            "start_time": to_ist(session.start_time).isoformat() if session.start_time else None,
+            "end_time": to_ist(session.end_time).isoformat() if session.end_time else None
         })
 
     return history
@@ -179,6 +186,8 @@ def get_weekly_report(db):
 
     total_sessions = 0
     completed_sessions = 0
+    overdue_sessions = 0
+    interrupted_sessions = 0
 
     for session in sessions:
         if session.created_at:
@@ -190,34 +199,53 @@ def get_weekly_report(db):
 
                 if session.status == "completed":
                     completed_sessions += 1
+                elif session.status == "overdue":
+                    overdue_sessions += 1
+                elif session.status == "interrupted":
+                    interrupted_sessions += 1
 
     return [{
         "week": f"{current_year}-W{current_week:02d}",
         "total_sessions": total_sessions,
-        "completed_sessions": completed_sessions
+        "completed_sessions": completed_sessions,
+        "overdue_sessions": overdue_sessions,
+        "interrupted_sessions": interrupted_sessions
     }]
 
 
 # 🔹 EXPORT CSV
 def export_sessions_csv(db):
-    sessions = db.query(Session).all()
+    history = get_session_history(db)
     file_path = "sessions_export.csv"
 
     with open(file_path, mode="w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow([
-            "ID", "Title", "Scheduled Duration",
-            "Status", "Start Time", "End Time"
+            "ID", "Title", "Goal", "Status", 
+            "Scheduled Duration (min)", "Actual Duration (min)", 
+            "Pause Count", "Focus Score (%)", 
+            "Start Time", "End Time"
         ])
 
-        for s in sessions:
+        for s in history:
+            # Format times in IST for better readability (DD-MM-YYYY HH:mm)
+            start_dt = to_ist(db.query(Session).get(s["id"]).start_time) if s["start_time"] else None
+            end_dt = to_ist(db.query(Session).get(s["id"]).end_time) if s["end_time"] else None
+            
+            start_str = start_dt.strftime("%d-%m-%Y %H:%M") if start_dt else "N/A"
+            end_str = end_dt.strftime("%d-%m-%Y %H:%M") if end_dt else "N/A"
+            
             writer.writerow([
-                s.id,
-                s.title,
-                s.scheduled_duration,
-                s.status,
-                s.start_time,
-                s.end_time
+                s["id"],
+                s["title"],
+                s["goal"] or "N/A",
+                s["status"],
+                s["scheduled_duration"],
+                s["actual_duration"] or 0,
+                s["pause_count"],
+                f"{s['focus_score']}%" if s['focus_score'] is not None else "N/A",
+                start_str,
+                end_str
             ])
 
     return file_path
