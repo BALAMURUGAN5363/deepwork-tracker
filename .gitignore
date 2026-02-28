@@ -25,3 +25,4 @@ Thumbs.db
 
 # CSV exports
 *.csv
+frontend/coverage/
