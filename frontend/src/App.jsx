@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "./App.css";
+import ActiveSession from "./components/ActiveSession";
 
 const API = "http://127.0.0.1:8000";
 
@@ -209,72 +210,16 @@ function App() {
         <h2>Current Sessions</h2>
 
         {history.filter(item => ["scheduled", "active", "paused"].includes(item.status)).map((item) => (
-          <div 
-            className={`history-item ${highlightedId === item.id ? "new-highlight" : ""}`} 
+          <ActiveSession
             key={item.id}
-            id={`session-${item.id}`}
-          >
-            <div className="top-row">
-              <strong>{item.title}</strong>
-
-              {/* Badge aligned to right */}
-              <span className={`badge ${item.status}`}>
-                {item.status}
-              </span>
-            </div>
-
-            {item.status === "active" && (
-              <div className="timer">
-                ⏱ {timers[item.id] || "0m 00s"}
-              </div>
-            )}
-
-            <div className="focus">
-              Focus: <b>{item.focus_score}%</b>
-            </div>
-
-            <div className="actions">
-              {item.status === "scheduled" && (
-                <button onClick={() => startSession(item.id)}>
-                  Start
-                </button>
-              )}
-
-              {item.status === "active" && (
-                <>
-                  <button
-                    className="pause-btn"
-                    onClick={() => openPauseModal(item.id)}
-                  >
-                    Pause
-                  </button>
-                  <button
-                    className="complete-btn"
-                    onClick={() => completeSession(item.id)}
-                  >
-                    Complete
-                  </button>
-                </>
-              )}
-
-              {item.status === "paused" && (
-                <>
-                  <button
-                    className="resume-btn"
-                    onClick={() => resumeSession(item.id)}
-                  >
-                    Resume
-                  </button>
-                  <button
-                    className="complete-btn"
-                    onClick={() => completeSession(item.id)}
-                  >
-                    Complete
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+            item={item}
+            highlightedId={highlightedId}
+            timerValue={timers[item.id]}
+            onStart={startSession}
+            onPause={openPauseModal}
+            onResume={resumeSession}
+            onComplete={completeSession}
+          />
         ))}
 
         {history.filter(item => ["scheduled", "active", "paused"].includes(item.status)).length === 0 && (
@@ -296,22 +241,24 @@ function App() {
       {showHistory && (
         <div className="section history-section">
           <h2>Session History</h2>
-          {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).map((item) => (
-            <div className="history-item" key={item.id}>
-              <div className="top-row">
-                <strong>{item.title}</strong>
-                <span className={`badge ${item.status}`}>
-                  {item.status}
-                </span>
+          <div className="history-scroll-container">
+            {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).map((item) => (
+              <div className="history-item" key={item.id}>
+                <div className="top-row">
+                  <strong>{item.title}</strong>
+                  <span className={`badge ${item.status}`}>
+                    {item.status}
+                  </span>
+                </div>
+                <div className="focus">
+                  Focus: <b>{item.focus_score}%</b>
+                </div>
               </div>
-              <div className="focus">
-                Focus: <b>{item.focus_score}%</b>
-              </div>
-            </div>
-          ))}
-          {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).length === 0 && (
-            <p className="empty-msg">No history records yet.</p>
-          )}
+            ))}
+            {history.filter(item => ["completed", "overdue", "interrupted"].includes(item.status)).length === 0 && (
+              <p className="empty-msg">No history records yet.</p>
+            )}
+          </div>
         </div>
       )}
 
