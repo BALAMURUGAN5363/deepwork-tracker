@@ -14,4 +14,11 @@ echo Running database migrations...
 alembic upgrade head
 
 echo Setup complete!
+echo.
+echo Running backend tests...
+set PYTHONPATH=.
+pytest --cov=app tests/
+
+echo.
+echo Setup finished successfully!
 echo Run backend using: run_backend.bat

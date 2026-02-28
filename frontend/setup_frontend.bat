@@ -48,6 +48,18 @@ IF %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
+echo Running frontend tests...
+echo.
+npm test -- --coverage --watchAll=false
+
+IF %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo ❌ Frontend tests failed. Fix errors before continuing.
+    pause
+    exit /b 1
+)
+
+echo.
 echo ==========================================
 echo ✅ Frontend setup completed successfully!
 echo ==========================================
