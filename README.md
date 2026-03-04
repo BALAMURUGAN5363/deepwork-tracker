@@ -122,15 +122,23 @@ deepwork-tracker/
 
 ## 🔧 Automated Setup (Recommended)
 
-1. **Full Project**: Run `setup.bat` from the root directory. This will set up both backend and frontend, run migrations, and execute all tests.
-2. **Individual Setup**:
-   - **Backend**: Run `setup_backend.bat`.
-   - **Frontend**: Run `setup_frontend.bat` from the `frontend` directory.
+1. **Backend & Full Project**: Run `setup.bat` from the root directory. This will set up the backend environment, install dependencies, run migrations, and execute all backend tests.
+2. **Frontend**: After the main setup, change your location to the `frontend` folder and run `setup_frontend.bat`. This will install NPM packages and run Jest tests.
 
 ## 🚀 Running the Application
 
 1. **Both (Recommended)**: Run `run_all.bat` from the root directory. This will launch both servers in separate windows.
-2. **Individual Servers**:
+2. **Manual Run (Troubleshooting)**:
+   If the servers do not start automatically after setup, you can run them manually:
+   - **Backend**: In the root folder, run:
+     ```bash
+     uvicorn app.main:app --reload
+     ```
+   - **Frontend**: In the `frontend` folder, run:
+     ```bash
+     npx vite
+     ```
+3. **Individual Servers**:
    - **Backend**: Run `run_backend.bat`.
    - **Frontend**: Run `run_frontend.bat` from the `frontend` directory.
 
