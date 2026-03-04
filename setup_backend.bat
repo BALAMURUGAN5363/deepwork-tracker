@@ -1,24 +1,25 @@
 @echo off
+echo ==========================================
+echo   Deep Work Tracker - Backend Setup
+echo ==========================================
 
-echo Creating virtual environment...
-python -m venv env
-
-echo Activating virtual environment...
+REM Activate virtual environment
 call env\Scripts\activate
 
-echo Installing dependencies...
-pip install --upgrade pip
-pip install -r requirements.txt
+REM Set Python path to project root
+set PYTHONPATH=%cd%
 
-echo Running database migrations...
-alembic upgrade head
+echo Installing backend dependencies...
 
-echo Setup complete!
+python -m pip install --upgrade pip
+
+pip install fastapi uvicorn sqlalchemy pytest pytest-cov httpx anyio pydantic
+
 echo.
 echo Running backend tests...
-set PYTHONPATH=.
-pytest --cov=app tests/
+
+pytest
 
 echo.
-echo Setup finished successfully!
-echo Run backend using: run_backend.bat
+echo Backend setup completed!
+pause

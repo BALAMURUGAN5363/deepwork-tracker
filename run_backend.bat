@@ -1,21 +1,24 @@
 @echo off
+echo ==========================================
+echo   Starting Backend Server
+echo ==========================================
+
 call env\Scripts\activate
 
-echo.
-echo ==========================================
-echo   Running Backend Unit Tests...
-echo ==========================================
-set PYTHONPATH=.
-pytest --cov=app tests/
+set PYTHONPATH=%cd%
 
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ❌ Backend tests failed. Fix errors before running the server.
+echo Running backend tests...
+
+pytest
+
+if %errorlevel% neq 0 (
+    echo Backend tests failed.
     pause
-    exit /b 1
+    exit /b
 )
 
-echo.
-echo ✅ Backend tests passed. Starting server...
-echo.
-uvicorn app.main:app --reload
+echo Starting FastAPI server...
+
+uvicorn app.main:app --reload --port 8000
+
+pause
